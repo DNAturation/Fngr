@@ -12,6 +12,14 @@ def arguments():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument('--fragment', type = int, default = 250,
+                        help = 'Size of pseudoreads to be generated [250]')
+
+    parser.add_argument('--db', required = True, help = 'Path to Kraken DB')
+
+    parser.add_argument('assembly', required = True,
+                        help = 'FASTA formatted file to be analyzed')
+
     return parser.parse_args()
 
 def generate_pseudoreads(filepath, fragment_size):
@@ -28,11 +36,12 @@ def generate_pseudoreads(filepath, fragment_size):
             end = start + fragment_size
             yield start, seq[start:end]
 
-    kmers = {}
+    pseudoreads = {}
 
     for contig_name, contig_seq in read_genome(filepath):
-        kmers[contig_name] = dict(fragment_contig(contig_seq, fragment_size))
-    
+        pseudoreads[contig_name] = dict(fragment_contig(contig_seq,
+                                                        fragment_size))
+
     return pseudoreads
 
 def format_query(filepath):
@@ -43,25 +52,32 @@ def format_query(filepath):
             start, seq = pair
 
             title = '|'.join(['>' + genome_name, contig_name, start])
-            
-        `    return '\n'.join([title, seq, ''])
+
+            return '\n'.join([title, seq, ''])
         return f
 
     out = []
 
     genome_name = os.path.splitext(os.path.basename(filepath))[0]
     pseudoreads = generate_pseudoreads(filepath, fragment_size)
-    
+
     for contig_name in pseudoreads:
-        
+
         format_pseudoread = format_contig(genome_name, contig_name)
 
         out += [format_pseudoread(read) for read in pseudoreads.items()]
-    
+
     return ''.join(out)
+
+def classify(queries, cores, db):
     
-def classify():
-    pass
+    cmd = ('kraken',
+           '--threads', cores,
+           '--db', db,
+           '--fasta-input', StringIO(queries))
+
+    kraken_out = subprocess.check_output(cmd)
+
 
 def parse_results():
     pass
@@ -73,7 +89,7 @@ def reporter():
     pass
 
 def main():
- 
+
     args = arguments()
 
 if __name__ == '__main__':
