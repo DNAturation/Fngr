@@ -17,8 +17,10 @@ def arguments():
 
     parser.add_argument('--db', required = True, help = 'Path to Kraken DB')
 
-    parser.add_argument('assembly', required = True,
-                        help = 'FASTA formatted file to be analyzed')
+    parser.add_argument('--cores', type = int, default = cpu_count(),
+                        help = 'Number of CPU cores to use [all]')
+
+    parser.add_argument('assembly', help = 'FASTA formatted file to analyze')
 
     return parser.parse_args()
 
@@ -32,7 +34,7 @@ def generate_pseudoreads(filepath, fragment_size):
 
     def fragment_contig(seq, fragment_size):
 
-        for start in range(len(seq) - fragment_size):
+        for start in range(len(seq) - fragment_size + 1):
             end = start + fragment_size
             yield start, seq[start:end]
 
@@ -65,19 +67,25 @@ def format_query(filepath):
 
         format_pseudoread = format_contig(genome_name, contig_name)
 
-        out += [format_pseudoread(read) for read in pseudoreads.items()]
+        out += [format_pseudoread(read) for
+                read in pseudoreads[contig_name].items()]
 
     return ''.join(out)
 
 def classify(queries, cores, db):
-    
-    cmd = ('kraken',
-           '--threads', cores,
-           '--db', db,
-           '--fasta-input', StringIO(queries))
 
-    kraken_out = subprocess.check_output(cmd)
+    kraken = ('kraken',
+              '--threads', cores,
+              '--db', db,
+              '--fasta-input', StringIO(queries))
 
+    krak_trans = ('kraken-translate', '--db', db)
+
+    kraken_out = subprocess.check_output(kraken)
+
+    translated = subprocess.check_output(krak_trans, input = kraken_out)
+
+    return translated
 
 def parse_results():
     pass
