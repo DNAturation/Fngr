@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from Bio import SeqIO
+from collections import defaultdict
 from io import StringIO
 from multiprocessing import cpu_count
 import argparse
@@ -63,6 +64,8 @@ def format_query(filepath):
     genome_name = os.path.splitext(os.path.basename(filepath))[0]
     pseudoreads = generate_pseudoreads(filepath, fragment_size)
 
+    pseudoread_counts = {key: len(pseudoreads[key]) for key in pseudoreads}
+
     for contig_name in pseudoreads:
 
         format_pseudoread = format_contig(genome_name, contig_name)
@@ -70,7 +73,7 @@ def format_query(filepath):
         out += [format_pseudoread(read) for
                 read in pseudoreads[contig_name].items()]
 
-    return ''.join(out)
+    return ''.join(out), pseudoread_counts
 
 def classify(queries, cores, db):
 
@@ -87,12 +90,33 @@ def classify(queries, cores, db):
 
     return translated
 
-def parse_results():
-    pass
+def parse_results(translated):
 
-def locate_novelty():
-    pass
+    calls = defaultdict(dict)
 
+    for line in translated:
+        header, phylo = line.strip().split('\t')
+        genome, contig, start = header.split('|')
+
+        calls[contig][start] = phylo.split(';')
+
+    return calls
+
+def locate_novelty(calls, counts, root):
+
+    foreign = {}
+
+    for contig in calls:
+        classified = [-1 for i in range(counts[contig])]  # init unclassified
+
+        for start in calls[contig]:
+
+            # 0 is possibly foreign, 1 matches root taxonomy
+            # unclassified reads are not in calls, so are left -1
+            classified[start] = int(root in calls[contig][start])
+
+        foreign[contig] = classified
+    
 def reporter():
     pass
 
