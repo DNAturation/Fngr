@@ -3,6 +3,7 @@
 from Bio import SeqIO
 from collections import defaultdict
 from io import StringIO
+from itertools import groupby
 from multiprocessing import cpu_count
 import argparse
 import os
@@ -82,7 +83,7 @@ def format_query(filepath):
         out += [format_pseudoread(read) for
                 read in pseudoreads[contig_name].items()]
 
-    return ''.join(out), pseudoread_counts
+        return ''.join(out), pseudoread_counts
 
 def classify(queries, cores, db):
 
@@ -113,7 +114,7 @@ def parse_results(translated):
 
 def determine_origin(calls, counts, root):
 
-    origin = {}
+    origins = {}
 
     for contig in calls:
         classified = [-1 for i in range(counts[contig])]  # init unclassified
@@ -124,12 +125,38 @@ def determine_origin(calls, counts, root):
             # unclassified reads are not in calls, so are left -1
             classified[start] = int(root in calls[contig][start])
 
-        origin[contig] = classified
+        origins[contig] = classified
 
-    return origin
+    return origins
 
-def identify_foreign(origin, threshold):
-    pass
+def identify_foreign(origins, threshold, fragment_size):
+
+    def process(call, vals):
+
+        seq_len = sum(1 for x in vals) + fragment_size
+
+        flagged = call is 0 and seq_len >= threshold
+
+        return flagged, seq_len
+
+    processed = 0
+
+    foreign_indices = defaultdict(list)
+
+    for contig in origins:
+        for call, values in groupby(origins[contig]):
+
+            flagged, seq_len = process(calls, values)
+
+            if flagged:
+
+                seq_indices = (processed, processed + seq_len)
+
+                foreign_indices[contig].append(seq_indices)
+
+            processed += seq_len
+
+    return foreign_indices
 
 def reporter():
     pass
@@ -137,6 +164,16 @@ def reporter():
 def main():
 
     args = arguments()
+
+    query, pseudoread_counts = format_query(args.assembly, args.fragment)
+
+    classifications = classify(query, args.cores, args.db)
+
+    parsed = parse_results(classifications)
+
+    origins = determine_origin(parsed, pseudoread_counts, args.organism)
+
+    foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
 if __name__ == '__main__':
     main()
