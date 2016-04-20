@@ -13,10 +13,19 @@ def arguments():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--fragment', type = int, default = 250,
-                        help = 'Size of pseudoreads to be generated [250]')
+    parser.add_argument('--organism', required = True,
+                        help = 'Most precise taxonomic description matching \
+                                the target organism')
 
     parser.add_argument('--db', required = True, help = 'Path to Kraken DB')
+
+    parser.add_argument('--threshold', type = int, default = 100,
+                        help = 'Number of consecutive pseudoreads not \
+                                matching `organism` required identify \
+                                the region as being of foreign origin [100]')
+
+    parser.add_argument('--fragment', type = int, default = 250,
+                        help = 'Size of pseudoreads to be generated [250]')
 
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use [all]')
@@ -102,9 +111,9 @@ def parse_results(translated):
 
     return calls
 
-def locate_novelty(calls, counts, root):
+def determine_origin(calls, counts, root):
 
-    foreign = {}
+    origin = {}
 
     for contig in calls:
         classified = [-1 for i in range(counts[contig])]  # init unclassified
@@ -115,8 +124,13 @@ def locate_novelty(calls, counts, root):
             # unclassified reads are not in calls, so are left -1
             classified[start] = int(root in calls[contig][start])
 
-        foreign[contig] = classified
-    
+        origin[contig] = classified
+
+    return origin
+
+def identify_foreign(origin, threshold):
+    pass
+
 def reporter():
     pass
 
