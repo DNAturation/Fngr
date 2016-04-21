@@ -2,7 +2,6 @@
 
 from Bio import SeqIO
 from collections import defaultdict
-from io import StringIO
 from itertools import groupby
 from multiprocessing import cpu_count
 import argparse
@@ -57,16 +56,16 @@ def generate_pseudoreads(filepath, fragment_size):
 
     return pseudoreads
 
-def format_query(filepath):
+def format_query(filepath, fragment_size):
 
     def format_contig(genome_name, contig_name):
         def f(pair):
 
             start, seq = pair
 
-            title = '|'.join(['>' + genome_name, contig_name, start])
+            title = '|'.join(['>' + genome_name, contig_name, str(start)])
 
-            return '\n'.join([title, seq, ''])
+            return '\n'.join([title, str(seq), ''])
         return f
 
     out = []
@@ -88,15 +87,18 @@ def format_query(filepath):
 def classify(queries, cores, db):
 
     kraken = ('kraken',
-              '--threads', cores,
+              '--threads', str(cores),
               '--db', db,
-              '--fasta-input', StringIO(queries))
+              '--fasta-input',
+              '/dev/fd/0')
 
     krak_trans = ('kraken-translate', '--db', db)
 
-    kraken_out = subprocess.check_output(kraken)
+    kraken_out = subprocess.check_output(kraken, input = queries,
+                                         universal_newlines = True)
 
-    translated = subprocess.check_output(krak_trans, input = kraken_out)
+    translated = subprocess.check_output(krak_trans, input = kraken_out,
+                                         universal_newlines = True)
 
     return translated
 
@@ -104,7 +106,8 @@ def parse_results(translated):
 
     calls = defaultdict(dict)
 
-    for line in translated:
+    for line in translated.strip().split('\n'):
+
         header, phylo = line.strip().split('\t')
         genome, contig, start = header.split('|')
 
@@ -119,11 +122,13 @@ def determine_origin(calls, counts, root):
     for contig in calls:
         classified = [-1 for i in range(counts[contig])]  # init unclassified
 
-        for start in calls[contig]:
+        for s in calls[contig]:
+
+            start = int(s)
 
             # 0 is possibly foreign, 1 matches root taxonomy
             # unclassified reads are not in calls, so are left -1
-            classified[start] = int(root in calls[contig][start])
+            classified[start] = int(root in calls[contig][s])
 
         origins[contig] = classified
 
@@ -146,7 +151,7 @@ def identify_foreign(origins, threshold, fragment_size):
     for contig in origins:
         for call, values in groupby(origins[contig]):
 
-            flagged, seq_len = process(calls, values)
+            flagged, seq_len = process(call, values)
 
             if flagged:
 
@@ -174,6 +179,5 @@ def main():
     origins = determine_origin(parsed, pseudoread_counts, args.organism)
 
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
-
 if __name__ == '__main__':
     main()
