@@ -13,7 +13,7 @@ def arguments():
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--organism', required = True,
+    parser.add_argument('--organism', type = str.lower, required = True,
                         help = 'Most precise taxonomic description matching \
                                 the target organism')
 
@@ -111,7 +111,7 @@ def parse_results(translated):
         header, phylo = line.strip().split('\t')
         genome, contig, start = header.split('|')
 
-        calls[contig][start] = phylo.split(';')
+        calls[contig][start] = phylo.lower().split(';')
 
     return calls
 
@@ -140,7 +140,7 @@ def identify_foreign(origins, threshold, fragment_size):
 
         seq_len = sum(1 for x in vals) + fragment_size
 
-        flagged = call is 0 and seq_len >= threshold
+        flagged = call is not 1 and seq_len >= (threshold + fragment_size - 1)
 
         return flagged, seq_len
 
@@ -162,9 +162,6 @@ def identify_foreign(origins, threshold, fragment_size):
             processed += seq_len
 
     return foreign_indices
-
-def reporter():
-    pass
 
 def main():
 
