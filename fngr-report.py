@@ -3,16 +3,20 @@
 from Bio import SeqIO
 from Bio.Application import NcbiblastnCommandline as blastn
 from Bio.Blast import NCBIXML
+from collections import defaultdict
 import json
 
 class Reporter(object):
 
-    def __init__(self, filepath, foreign_indices, nt = '', top = 1):
+    def __init__(self, filepath, foreign_indices, phylogeny, fragment_size,
+                 nt_path, top = 1):
 
         self.genome = self._load_genome(filepath)
         self.foreign_indices = foreign_indices
-        self.nt_path = nt
+        self.nt_path = nt_path
         self.top = top
+        self.phylogeny = phylogeny
+        self.fragment_size = fragment_size
         self.report = {}
 
     def _load_genome(filepath):
@@ -26,20 +30,20 @@ class Reporter(object):
         start, stop = start_stop
         return self.genome[contig][start:stop]
 
-    def _blast(self, possibly_foreign):
+    def _blast(self, seq):
 
         if self.nt_path:
 
             hits = []
 
-            q = blastn(query = possibly_foreign, db = self.nt_path, outfmt = 5)
+            q = blastn(query = seq, db = self.nt_path, outfmt = 5)
 
             stdout, stderr = q()
             result = NCBIXML.read(stdout)
 
             for aln in result.alignments:
                 if len(hits) < top:
-                    hsp = next(aln.hsps) # top hit for each alignment
+                    hsp = next(aln.hsps)  # top hit for each alignment
                     hits.append(aln.title)
                 else:
                     break
@@ -48,12 +52,37 @@ class Reporter(object):
 
         return None and out
 
-    def _create_json(self, index):
+    def _parse_foreign_phylo(self, contig, index_pair):
 
-        start, stop = index
-        out = {'index': {'start': start, 'stop': stop},
-                pass
-                }
+        classifications = defaultdict(float)
+
+        start, stop = index_pair
+        stop = stop - self.fragment_size
+
+        total = 1 + stop - start
+
+        reads = (str(x) for x in range(start, stop))
+
+        for i in reads:
+            try:
+                leaf = self.phylogeny[contig][i][-1]
+            except KeyError:
+                leaf = 'unclassified'
+
+            classifications[leaf] += 1 / total
+
+        return classifications
+
+    def _create_json(self):
+
+        def _result_json(self, contig, index_pair):
+
+            seq = self.genome[start:stop]
+            start, stop = index_pair
+            out = {'index': {'start': start, 'stop': stop},
+                   'sequence': seq,
+                   'blast_hits': self._blast(seq),
+                   'read_classification': self._parse_foreign_phylo()}
 
     def report(self):
         pass

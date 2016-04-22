@@ -17,7 +17,11 @@ def arguments():
                         help = 'Most precise taxonomic description matching \
                                 the target organism')
 
-    parser.add_argument('--db', required = True, help = 'Path to Kraken DB')
+    parser.add_argument('--kraken-database', required = True,
+                        help = 'Path to Kraken DB')
+
+    parser.add_argument('--nt-database', default = None,
+                        help = 'Path to NCBI `nt` database')
 
     parser.add_argument('--threshold', type = int, default = 100,
                         help = 'Number of consecutive pseudoreads not \
@@ -102,7 +106,7 @@ def classify(queries, cores, db):
 
     return translated
 
-def parse_results(translated):
+def parse_phylogeny(translated):
 
     calls = defaultdict(dict)
 
@@ -171,7 +175,7 @@ def main():
 
     classifications = classify(query, args.cores, args.db)
 
-    parsed = parse_results(classifications)
+    parsed = parse_phylogeny(classifications)
 
     origins = determine_origin(parsed, pseudoread_counts, args.organism)
 
