@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 from Bio import SeqIO
-from Bio.Application import NcbiblastnCommandline as blastn
 from Bio.Blast import NCBIXML
 from collections import defaultdict
+from io import StringIO
 import json
+import subprocess
 
 class Reporter(object):
 
     def __init__(self, filepath, foreign_indices, phylogeny, fragment_size,
                  nt_path, top = 1):
 
+        self.filepath = filepath
         self.genome = self._load_genome(filepath)
         self.foreign_indices = foreign_indices
         self.nt_path = nt_path
@@ -34,16 +36,16 @@ class Reporter(object):
 
         if self.nt_path:
 
+            blastn = ('blastn', '-subject', self.filepath, '-outfmt', '5')
             hits = []
 
-            q = blastn(query = seq, db = self.nt_path, outfmt = 5)
+            blastn_out = subprocess.check_output(blastn, input = seq,
+                                                 universal_newlines = True)
 
-            stdout, stderr = q()
-            result = NCBIXML.read(stdout)
+            result = NCBIXML.read(StringIO(blastn_out))
 
             for aln in result.alignments:
                 if len(hits) < top:
-                    hsp = next(aln.hsps)  # top hit for each alignment
                     hits.append(aln.title)
                 else:
                     break
