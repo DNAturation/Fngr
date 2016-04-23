@@ -61,7 +61,7 @@ class Reporter(object):
 
         total = 1 + stop - start
 
-        reads = (str(x) for x in range(start, stop))
+        reads = (str(x) for x in range(start, stop + 1))
 
         for i in reads:
             try:
@@ -75,7 +75,7 @@ class Reporter(object):
 
     def _create_json(self):
 
-        def _result_json(self, contig, index_pair):
+        def result_json(contig, index_pair):
 
             seq = self.genome[start:stop]
             start, stop = index_pair
@@ -83,6 +83,17 @@ class Reporter(object):
                    'sequence': seq,
                    'blast_hits': self._blast(seq),
                    'read_classification': self._parse_foreign_phylo()}
+
+            return out
+
+        report = defaultdict(list)
+
+        for contig in self.foreign_indices:
+            for index_pair in self.foreign_indices[contig]:
+
+                report[contig].append(result_json(contig, index_pair))
+
+        return json.dumps(report, separators = (', ', ': '), indent = 4)
 
     def report(self):
         pass
