@@ -75,16 +75,32 @@ class Reporter(object):
 
         return classifications
 
+    def _gc_content(sequence):
+
+        return sum(1 for x in sequence.upper() if x in "GC") / len(sequence)
+
     def _create_json(self):
 
         def result_json(contig, index_pair):
 
-            seq = self.genome[start:stop]
+            seq = self.genome[contig][start:stop]
             start, stop = index_pair
-            out = {'index': {'start': start, 'stop': stop},
-                   'sequence': seq,
-                   'blast_hits': self._blast(seq),
-                   'read_classification': self._parse_foreign_phylo()}
+
+            out = {'index': {'start': start,
+                             'stop': stop},
+
+                   'length': {'query': len(seq),
+                              'contig': len(self.genome[contig]),
+                              'ratio': len(seq) / len(self.genome[contig])},
+
+                   'gc': {'query': self._gc_content(seq),
+                          'contig': self._gc_content(self.genome[contig])},
+
+                   'blast_hits': list(enumerate(self._blast(seq), 1)),
+
+                   'read_classification': self._parse_foreign_phylo(),
+
+                   'sequence': seq}
 
             return out
 
