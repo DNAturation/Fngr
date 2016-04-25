@@ -36,7 +36,7 @@ class Reporter(object):
 
         if self.nt_path:
 
-            blastn = ('blastn', '-subject', self.filepath, '-outfmt', '5')
+            blastn = ('blastn', '-db', self.nt_path, '-outfmt', '5')
             hits = []
 
             blastn_out = subprocess.check_output(blastn, input = seq,
@@ -52,7 +52,10 @@ class Reporter(object):
 
             out = hits
 
-        return None and out
+        else:
+            out = None
+
+        return out
 
     def _parse_foreign_phylo(self, contig, index_pair):
 
