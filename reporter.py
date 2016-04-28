@@ -13,17 +13,18 @@ class Reporter(object):
                  nt_path, top = 1):
 
         self.filepath = filepath
-        self.genome = self._load_genome(filepath)
+        self.genome = self._load_genome()
         self.foreign_indices = foreign_indices
         self.nt_path = nt_path
         self.top = top
         self.phylogeny = phylogeny
         self.fragment_size = fragment_size
 
-    def _load_genome(filepath):
+    def _load_genome(self):
 
-        with open(filepath, 'r') as f:
-            g = {contig.id: contig.seq for contig in SeqIO.parse(f, 'fasta')}
+        with open(self.filepath, 'r') as f:
+            g = {contig.id: str(contig.seq)
+                 for contig in SeqIO.parse(f, 'fasta')}
         return g
 
     def _subseq(self, contig, start_stop):
@@ -52,15 +53,14 @@ class Reporter(object):
             out = hits
 
         else:
-            out = None
+            out = []
 
         return out
 
-    def _parse_foreign_phylo(self, contig, index_pair):
+    def _parse_foreign_phylo(self, contig, start, stop):
 
         classifications = defaultdict(float)
 
-        start, stop = index_pair
         stop = stop - self.fragment_size
 
         total = 1 + stop - start
@@ -77,7 +77,7 @@ class Reporter(object):
 
         return classifications
 
-    def _gc_content(sequence):
+    def _gc_content(self, sequence):
 
         return sum(1 for x in sequence.upper() if x in "GC") / len(sequence)
 
@@ -85,8 +85,8 @@ class Reporter(object):
 
         def result_json(contig, index_pair):
 
-            seq = self.genome[contig][start:stop]
             start, stop = index_pair
+            seq = self.genome[contig][start:stop]
 
             out = {'index': {'start': start,
                              'stop': stop},
@@ -100,20 +100,20 @@ class Reporter(object):
 
                    'blast_hits': list(enumerate(self._blast(seq), 1)),
 
-                   'read_classification': self._parse_foreign_phylo(),
+                   'read_classification': self._parse_foreign_phylo(contig, start, stop),
 
                    'sequence': seq}
 
             return out
 
-        report = defaultdict(list)
+        r = defaultdict(list)
 
         for contig in self.foreign_indices:
             for index_pair in self.foreign_indices[contig]:
 
-                report[contig].append(result_json(contig, index_pair))
+                r[contig].append(result_json(contig, index_pair))
 
-        return json.dumps(report, separators = (', ', ': '), indent = 4)
+        return json.dumps(r, separators = (', ', ': '), indent = 4)
 
     def report(self):
 

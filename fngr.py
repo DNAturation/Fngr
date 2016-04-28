@@ -146,17 +146,18 @@ def identify_foreign(origins, threshold, fragment_size):
 
     def process(call, vals):
 
-        seq_len = sum(1 for x in vals) + fragment_size
+        seq_len = sum(1 for x in vals) + fragment_size - 1
 
         flagged = call is not 1 and seq_len >= (threshold + fragment_size - 1)
 
         return flagged, seq_len
 
-    processed = 0
-
     foreign_indices = defaultdict(list)
 
     for contig in origins:
+
+        processed = 0
+
         for call, values in groupby(origins[contig]):
 
             flagged, seq_len = process(call, values)
@@ -167,7 +168,7 @@ def identify_foreign(origins, threshold, fragment_size):
 
                 foreign_indices[contig].append(seq_indices)
 
-            processed += seq_len
+            processed += seq_len - fragment_size
 
     return foreign_indices
 
@@ -185,9 +186,9 @@ def main():
 
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
-    reporter = reporter.Reporter(args.assembly, foreign_indices, phylogeny,
-                                    args.fragment, args.nt_path)
+    report = reporter.Reporter(args.assembly, foreign_indices, phylogeny,
+                                    args.fragment, args.nt_database)
 
-    reporter.report()
+    report.report()
 if __name__ == '__main__':
     main()
