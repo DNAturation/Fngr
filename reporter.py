@@ -19,7 +19,6 @@ class Reporter(object):
         self.top = top
         self.phylogeny = phylogeny
         self.fragment_size = fragment_size
-        self.report = {}
 
     def _load_genome(filepath):
 
@@ -117,4 +116,6 @@ class Reporter(object):
         return json.dumps(report, separators = (', ', ': '), indent = 4)
 
     def report(self):
-        pass
+
+        output = self._create_json()
+        print(output)  # report is sent to stdout

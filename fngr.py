@@ -5,6 +5,7 @@ from collections import defaultdict
 from itertools import groupby
 from multiprocessing import cpu_count
 import argparse
+import reporter
 import os
 import subprocess
 import sys
@@ -18,7 +19,7 @@ def arguments():
                                 the target organism')
 
     parser.add_argument('--kraken-database', required = True,
-                        help = 'Path to Kraken DB')
+                        help = 'Path to Kraken database')
 
     parser.add_argument('--nt-database', default = None,
                         help = 'Path to NCBI `nt` database')
@@ -176,12 +177,17 @@ def main():
 
     query, pseudoread_counts = format_query(args.assembly, args.fragment)
 
-    classifications = classify(query, args.cores, args.db)
+    classifications = classify(query, args.cores, args.kraken_database)
 
-    parsed = parse_phylogeny(classifications)
+    phylogeny = parse_phylogeny(classifications)
 
-    origins = determine_origin(parsed, pseudoread_counts, args.organism)
+    origins = determine_origin(phylogeny, pseudoread_counts, args.organism)
 
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
+
+    reporter = reporter.Reporter(args.assembly, foreign_indices, phylogeny,
+                                    args.fragment, args.nt_path)
+
+    reporter.report()
 if __name__ == '__main__':
     main()
