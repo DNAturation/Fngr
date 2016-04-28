@@ -34,7 +34,8 @@ def arguments():
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use [all]')
 
-    parser.add_argument('assembly', help = 'FASTA formatted file to analyze')
+    parser.add_argument('assembly', help = 'FASTA formatted file \
+                                            or \'-\' to read from stdin')
 
     return parser.parse_args()
 
@@ -42,7 +43,9 @@ def generate_pseudoreads(filepath, fragment_size):
 
     def read_genome(filepath):
 
-        with open(filepath, 'r') as f:
+        o = sys.stdin if filepath == '-' else open(filepath, 'r')
+
+        with o as f:
             for contig in SeqIO.parse(f, 'fasta'):
                 yield contig.id, contig.seq
 
