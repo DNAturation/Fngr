@@ -9,20 +9,19 @@ import subprocess
 
 class Reporter(object):
 
-    def __init__(self, filepath, foreign_indices, phylogeny, fragment_size,
+    def __init__(self, handle, foreign_indices, phylogeny, fragment_size,
                  nt_path, top = 1):
 
-        self.filepath = filepath
-        self.genome = self._load_genome()
+        self.genome = self._load_genome(handle)
         self.foreign_indices = foreign_indices
         self.nt_path = nt_path
         self.top = top
         self.phylogeny = phylogeny
         self.fragment_size = fragment_size
 
-    def _load_genome(self):
+    def _load_genome(self, handle):
 
-        with open(self.filepath, 'r') as f:
+        with open(handle, 'r') as f:
             g = {contig.id: str(contig.seq)
                  for contig in SeqIO.parse(f, 'fasta')}
         return g

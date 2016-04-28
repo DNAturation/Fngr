@@ -40,15 +40,19 @@ def arguments():
 
     return parser.parse_args()
 
+def handle_input(filepath):
+
+    o = sys.stdin if filepath == '-' else open(filepath, 'r')
+
+    with o as f:
+        return f
+
 def generate_pseudoreads(filepath, fragment_size):
 
-    def read_genome(filepath):
+    def read_genome(f):
 
-        o = sys.stdin if filepath == '-' else open(filepath, 'r')
-
-        with o as f:
-            for contig in SeqIO.parse(f, 'fasta'):
-                yield contig.id, contig.seq
+        for contig in SeqIO.parse(f, 'fasta'):
+            yield contig.id, contig.seq
 
     def fragment_contig(seq, fragment_size):
 
@@ -176,7 +180,9 @@ def main():
 
     args = arguments()
 
-    query, pseudoread_counts = format_query(args.assembly, args.fragment)
+    handle = handle_input(args.assembly)
+
+    query, pseudoread_counts = format_query(handle, args.fragment)
 
     classifications = classify(query, args.cores, args.kraken_database)
 
@@ -186,7 +192,7 @@ def main():
 
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
-    report = reporter.Reporter(args.assembly, foreign_indices, phylogeny,
+    report = reporter.Reporter(handle, foreign_indices, phylogeny,
                                     args.fragment, args.nt_database)
 
     report.report()
