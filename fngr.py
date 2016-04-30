@@ -47,7 +47,7 @@ def handle_input(filepath):
     with o as f:
         return f
 
-def generate_pseudoreads(filepath, fragment_size):
+def generate_pseudoreads(handle, fragment_size):
 
     def read_genome(f):
 
@@ -62,13 +62,13 @@ def generate_pseudoreads(filepath, fragment_size):
 
     pseudoreads = {}
 
-    for contig_name, contig_seq in read_genome(filepath):
+    for contig_name, contig_seq in read_genome(handle):
         pseudoreads[contig_name] = dict(fragment_contig(contig_seq,
                                                         fragment_size))
 
     return pseudoreads
 
-def format_query(filepath, fragment_size):
+def format_query(handle, fragment_size):
 
     def format_contig(genome_name, contig_name):
         def f(pair):
@@ -83,7 +83,7 @@ def format_query(filepath, fragment_size):
     out = []
 
     genome_name = os.path.splitext(os.path.basename(filepath))[0]
-    pseudoreads = generate_pseudoreads(filepath, fragment_size)
+    pseudoreads = generate_pseudoreads(handle, fragment_size)
 
     pseudoread_counts = {key: len(pseudoreads[key]) for key in pseudoreads}
 
