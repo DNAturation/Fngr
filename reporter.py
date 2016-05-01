@@ -3,6 +3,7 @@
 from Bio import SeqIO
 from Bio.Blast import NCBIXML
 from collections import defaultdict
+from decimal import Decimal
 from io import StringIO
 import json
 import subprocess
@@ -76,9 +77,16 @@ class Reporter(object):
 
         return classifications
 
+    def _ddivide(self, a, b):
+
+        return float(Decimal(str(a)) / Decimal(str(b)))
+
     def _gc_content(self, sequence):
 
-        return sum(1 for x in sequence.upper() if x in "GC") / len(sequence)
+        gcs = sum(1 for x in sequence.upper() if x in "GC")
+        l = len(sequence)
+
+        return self._ddivide(gcs, l)
 
     def _create_json(self):
 
@@ -87,12 +95,14 @@ class Reporter(object):
             start, stop = index_pair
             seq = self.genome[contig][start:stop]
 
+            length_ratio = self._ddivide(len(seq), len(self.genome[contig]))
+
             out = {'index': {'start': start,
                              'stop': stop},
 
                    'length': {'query': len(seq),
                               'contig': len(self.genome[contig]),
-                              'ratio': len(seq) / len(self.genome[contig])},
+                              'ratio': length_ratio},
 
                    'gc': {'query': self._gc_content(seq),
                           'contig': self._gc_content(self.genome[contig])},
