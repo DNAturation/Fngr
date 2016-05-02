@@ -64,6 +64,7 @@ class Reporter(object):
         stop = stop - self.fragment_size
 
         total = 1 + stop - start
+        read_frac =  Decimal('1.0') / Decimal(str(total))
 
         reads = (str(x) for x in range(start, stop + 1))
 
@@ -73,9 +74,9 @@ class Reporter(object):
             except KeyError:
                 leaf = 'unclassified'
 
-            classifications[leaf] += 1 / total
+            classifications[leaf] += read_frac
 
-        return classifications
+        return {key: float(classifications[key]) for key in classifications}
 
     def _ddivide(self, a, b):
 
