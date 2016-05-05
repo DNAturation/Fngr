@@ -22,9 +22,9 @@ class Reporter(object):
 
     def _load_genome(self, handle):
 
-        with open(handle, 'r') as f:
-            g = {contig.id: str(contig.seq)
-                 for contig in SeqIO.parse(f, 'fasta')}
+        g = {contig.id: str(contig.seq)
+             for contig in SeqIO.parse(StringIO(handle), 'fasta')}
+
         return g
 
     def _subseq(self, contig, start_stop):
@@ -59,12 +59,12 @@ class Reporter(object):
 
     def _parse_foreign_phylo(self, contig, start, stop):
 
-        classifications = defaultdict(float)
+        classifications = defaultdict(Decimal)
 
         stop = stop - self.fragment_size
 
         total = 1 + stop - start
-        read_frac =  Decimal('1.0') / Decimal(str(total))
+        read_frac = Decimal('1.0') / Decimal(str(total))
 
         reads = (str(x) for x in range(start, stop + 1))
 
@@ -97,6 +97,7 @@ class Reporter(object):
             seq = self.genome[contig][start:stop]
 
             length_ratio = self._ddivide(len(seq), len(self.genome[contig]))
+            phylo self._parse_foreign_phylo(contig, start, stop)
 
             out = {'index': {'start': start,
                              'stop': stop},
@@ -110,7 +111,7 @@ class Reporter(object):
 
                    'blast_hits': list(enumerate(self._blast(seq), 1)),
 
-                   'read_classification': self._parse_foreign_phylo(contig, start, stop),
+                   'read_classification': phylo,
 
                    'sequence': seq}
 
