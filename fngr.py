@@ -2,11 +2,12 @@
 
 from Bio import SeqIO
 from collections import defaultdict
-from itertools import groupby
+from io import StringIO
+from itertools import groupby, tee
 from multiprocessing import cpu_count
 import argparse
-import reporter
 import os
+import reporter
 import subprocess
 import sys
 
@@ -32,6 +33,10 @@ def arguments():
     parser.add_argument('--fragment', type = int, default = 250,
                         help = 'Size of pseudoreads to be generated [250]')
 
+    parser.add_argument('--genome-name', default=None,
+                        help = 'Override the default genome name \
+                                [infer from filename or \'stdin\']')
+
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use [all]')
 
@@ -40,18 +45,26 @@ def arguments():
 
     return parser.parse_args()
 
-def handle_input(filepath):
+def handle_input(filepath, genome_name):
 
-    o = sys.stdin if filepath == '-' else open(filepath, 'r')
+    if genome_name:
+        name = genome_name
+    elif filepath != '-':
+        name = os.path.splitext(os.path.basename(filepath))[0]
+    else:
+        name = 'stdin'
 
-    with o as f:
-        return f
+    f = sys.stdin if filepath == '-' else open(filepath)
+
+    with f as o:
+        return o.read(), name
+
 
 def generate_pseudoreads(handle, fragment_size):
 
     def read_genome(f):
 
-        for contig in SeqIO.parse(f, 'fasta'):
+        for contig in SeqIO.parse(StringIO(f), 'fasta'):
             yield contig.id, contig.seq
 
     def fragment_contig(seq, fragment_size):
@@ -68,7 +81,7 @@ def generate_pseudoreads(handle, fragment_size):
 
     return pseudoreads
 
-def format_query(handle, fragment_size):
+def format_query(handle, genome_name, fragment_size):
 
     def format_contig(genome_name, contig_name):
         def f(pair):
@@ -82,7 +95,6 @@ def format_query(handle, fragment_size):
 
     out = []
 
-    genome_name = os.path.splitext(os.path.basename(filepath))[0]
     pseudoreads = generate_pseudoreads(handle, fragment_size)
 
     pseudoread_counts = {key: len(pseudoreads[key]) for key in pseudoreads}
@@ -180,12 +192,12 @@ def main():
 
     args = arguments()
 
-    handle = handle_input(args.assembly)
+    handle, genome_name = handle_input(args.assembly, args.genome_name)
 
-    query, pseudoread_counts = format_query(handle, args.fragment)
+    query, pseudoread_counts = format_query(handle, genome_name, args.fragment)
 
     classifications = classify(query, args.cores, args.kraken_database)
-
+    print(classifications[:1000])
     phylogeny = parse_phylogeny(classifications)
 
     origins = determine_origin(phylogeny, pseudoread_counts, args.organism)
@@ -193,7 +205,7 @@ def main():
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
     report = reporter.Reporter(handle, foreign_indices, phylogeny,
-                                    args.fragment, args.nt_database)
+                               args.fragment, args.nt_database)
 
     report.report()
 if __name__ == '__main__':
