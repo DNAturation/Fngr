@@ -97,7 +97,7 @@ class Reporter(object):
             seq = self.genome[contig][start:stop]
 
             length_ratio = self._ddivide(len(seq), len(self.genome[contig]))
-            phylo self._parse_foreign_phylo(contig, start, stop)
+            phylo = self._parse_foreign_phylo(contig, start, stop)
 
             out = {'index': {'start': start,
                              'stop': stop},
@@ -118,7 +118,7 @@ class Reporter(object):
             return out
 
         r = defaultdict(list)
-        print(self.genome.keys())
+
         for contig in self.foreign_indices:
             for index_pair in self.foreign_indices[contig]:
 

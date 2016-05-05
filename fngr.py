@@ -197,7 +197,7 @@ def main():
     query, pseudoread_counts = format_query(handle, genome_name, args.fragment)
 
     classifications = classify(query, args.cores, args.kraken_database)
-    print(classifications[:1000])
+
     phylogeny = parse_phylogeny(classifications)
 
     origins = determine_origin(phylogeny, pseudoread_counts, args.organism)
