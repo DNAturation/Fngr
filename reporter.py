@@ -118,7 +118,7 @@ class Reporter(object):
             return out
 
         r = defaultdict(list)
-
+        print(self.genome.keys())
         for contig in self.foreign_indices:
             for index_pair in self.foreign_indices[contig]:
 
