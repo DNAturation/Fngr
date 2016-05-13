@@ -124,7 +124,7 @@ class Reporter(object):
 
                 r[contig].append(result_json(contig, index_pair))
 
-        return json.dumps(r, separators = (', ', ': '), indent = 4)
+        return json.dumps(r, separators = (', ', ': '))
 
     def report(self):
 

@@ -78,7 +78,6 @@ def generate_pseudoreads(handle, fragment_size):
     for contig_name, contig_seq in read_genome(handle):
         pseudoreads[contig_name] = dict(fragment_contig(contig_seq,
                                                         fragment_size))
-
     return pseudoreads
 
 def format_query(handle, genome_name, fragment_size):
@@ -100,13 +99,12 @@ def format_query(handle, genome_name, fragment_size):
     pseudoread_counts = {key: len(pseudoreads[key]) for key in pseudoreads}
 
     for contig_name in pseudoreads:
-
         format_pseudoread = format_contig(genome_name, contig_name)
 
         out += [format_pseudoread(read) for
                 read in pseudoreads[contig_name].items()]
 
-        return ''.join(out), pseudoread_counts
+    return ''.join(out), pseudoread_counts
 
 def classify(queries, cores, db):
 
@@ -136,7 +134,6 @@ def parse_phylogeny(translated):
         genome, contig, start = header.split('|')
 
         calls[contig][start] = phylo.lower().split(';')
-
     return calls
 
 def determine_origin(calls, counts, root):
@@ -175,7 +172,6 @@ def identify_foreign(origins, threshold, fragment_size):
         processed = 0
 
         for call, values in groupby(origins[contig]):
-
             flagged, seq_len = process(call, values)
 
             if flagged:
