@@ -2,6 +2,7 @@
 
 from Bio import SeqIO
 from collections import defaultdict
+from functools import partial
 from io import StringIO
 from itertools import groupby
 from multiprocessing import cpu_count
@@ -132,6 +133,12 @@ def format_query(handle, genome_name, fragment_size):
 
     return ''.join(out), pseudoread_counts
 
+def translate(kraken_out_chunk, db):
+
+    krak_trans = ('kraken-translate', '--db', db)
+    return subprocess.check_output(krak_trans, input = kraken_out_chunk,
+                                   universal_newlines = True).strip()
+
 def classify(queries, cores, db):
     """Runs kraken and kraken-translate, which are assumed to be in $PATH"""
 
@@ -144,12 +151,7 @@ def classify(queries, cores, db):
                              # a proper variable
 
         for i in range(0, length, length // 4):
-            yield '\n'.join(split_kraken_out[chunk:chunk + length // 4])
-
-    def translate(cmd, kraken_out_chunk):
-
-        return subprocess.check_output(cmd, input = kraken_out_chunk,
-                                       universal_newlines = True)
+            yield '\n'.join(split_kraken_out[i:i + (length // 4)])
 
     kraken = ('kraken',
               '--threads', str(cores),
@@ -157,13 +159,12 @@ def classify(queries, cores, db):
               '--fasta-input',
               '/dev/fd/0')
 
-    krak_trans = ('kraken-translate', '--db', db)
-
     kraken_out = subprocess.check_output(kraken, input = queries,
                                          universal_newlines = True)
+
     with concurrent.futures.ProcessPoolExecutor(4) as executor:
-        translated = executor.map(translate(krak_trans,
-                                            chunk_kraken_out(kraken_out)))
+        translated = executor.map(partial(translate, db=db),
+                                  chunk_kraken_out(kraken_out))
 
     return '\n'.join(translated)
 
@@ -177,12 +178,13 @@ def parse_phylogeny(translated):
 
     calls = defaultdict(dict)
 
-    for line in translated.strip().split('\n'):
+    for line in translated.splitlines():
 
         header, phylo = line.strip().split('\t')
         genome, contig, start = header.split('|')
 
         calls[contig][start] = phylo.lower().split(';')
+
     return calls
 
 def determine_origin(calls, counts, root):
