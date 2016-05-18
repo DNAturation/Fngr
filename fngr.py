@@ -79,7 +79,7 @@ def generate_pseudoreads(handle, fragment_size):
     def read_genome(f):
 
         for contig in SeqIO.parse(StringIO(f), 'fasta'):
-            yield contig.id, contig.seq
+            yield contig.id.replace('|',';'), contig.seq
 
     def fragment_contig(seq, fragment_size):
 
@@ -166,6 +166,7 @@ def parse_phylogeny(translated):
         genome, contig, start = header.split('|')
 
         calls[contig][start] = phylo.lower().split(';')
+
     return calls
 
 def determine_origin(calls, counts, root):
