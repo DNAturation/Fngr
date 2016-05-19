@@ -5,6 +5,7 @@ from collections import defaultdict
 from functools import partial
 from io import StringIO
 from itertools import groupby
+from math import sqrt
 from multiprocessing import cpu_count
 import argparse
 import concurrent.futures
@@ -81,7 +82,7 @@ def generate_pseudoreads(handle, fragment_size):
     def read_genome(f):
 
         for contig in SeqIO.parse(StringIO(f), 'fasta'):
-            yield contig.id, contig.seq
+            yield contig.id.replace('|',';'), contig.seq
 
     def fragment_contig(seq, fragment_size):
 
@@ -142,17 +143,16 @@ def translate(kraken_out_chunk, db):
 def classify(queries, cores, db):
     """Runs kraken and kraken-translate, which are assumed to be in $PATH"""
 
-    def chunk_kraken_out(kraken_out):
+    def chunk_kraken_out(kraken_out, frac):
 
         split_kraken_out = kraken_out.splitlines()
         length = len(split_kraken_out)
-        chunk = length // 4  # so far, tests show kraken-translate uses
-                             # ~1/4 the RAM of kraken; should be set by
-                             # a proper variable
+        chunk = length // frac
 
-        for i in range(0, length, length // 4):
-            yield '\n'.join(split_kraken_out[i:i + (length // 4)])
+        for i in range(0, length, chunk):
+            yield '\n'.join(split_kraken_out[i:i + chunk)])
 
+    frac = round(sqrt(cores))
     kraken = ('kraken',
               '--threads', str(cores),
               '--db', db,
@@ -162,9 +162,10 @@ def classify(queries, cores, db):
     kraken_out = subprocess.check_output(kraken, input = queries,
                                          universal_newlines = True)
 
-    with concurrent.futures.ProcessPoolExecutor(4) as executor:
+    with concurrent.futures.ProcessPoolExecutor(frac) as executor:
+
         translated = executor.map(partial(translate, db=db),
-                                  chunk_kraken_out(kraken_out))
+                                  chunk_kraken_out(kraken_out frac))
 
     return '\n'.join(translated)
 

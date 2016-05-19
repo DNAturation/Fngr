@@ -22,7 +22,7 @@ class Reporter(object):
 
     def _load_genome(self, handle):
 
-        g = {contig.id: str(contig.seq)
+        g = {contig.id.replace('|',';'): str(contig.seq)
              for contig in SeqIO.parse(StringIO(handle), 'fasta')}
 
         return g
