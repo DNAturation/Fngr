@@ -262,7 +262,7 @@ def identify_foreign(origins, threshold, fragment_size):
 
                 foreign_indices[contig].append(seq_indices)
 
-            processed += seq_len - fragment_size
+            processed += seq_len - fragment_size + 1
 
     return foreign_indices
 
