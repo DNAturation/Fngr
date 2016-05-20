@@ -19,7 +19,7 @@ def arguments():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--organism', type = str.lower, required = True,
-                        help = 'Most precise taxonomic description matching \
+                        help = 'Least precise taxonomic description matching \
                                 the target organism')
 
     parser.add_argument('--kraken-database', required = True,
@@ -135,16 +135,22 @@ def format_query(handle, genome_name, fragment_size):
     return ''.join(out), pseudoread_counts
 
 def translate(kraken_out_chunk, db):
+    """Runs kraken-translate - called in parallel by classify()"""
 
     krak_trans = ('kraken-translate', '--db', db)
-    return subprocess.check_output(krak_trans, input = kraken_out_chunk,
-                                   universal_newlines = True).strip()
+
+    return subprocess.check_output(krak_trans,
+                                   input=kraken_out_chunk,
+                                   universal_newlines=True).strip()
 
 def classify(queries, cores, db):
     """Runs kraken and kraken-translate, which are assumed to be in $PATH"""
 
     def chunk_kraken_out(kraken_out, frac):
-
+        """Generator which chunks the output of kraken
+        into sqrt(args.cores) equal-ish sized pieces
+        for each kraken-translate process.
+        """
         split_kraken_out = kraken_out.splitlines()
         length = len(split_kraken_out)
         chunk = length // frac

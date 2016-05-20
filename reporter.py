@@ -22,18 +22,22 @@ class Reporter(object):
         self.cores = cores
 
     def _load_genome(self, handle):
+        """Returns a dictionary representation of the fasta file.
+        contig name      => key
+        contig sequence  => value
+        """
 
         g = {contig.id.replace('|', ';'): str(contig.seq)
              for contig in SeqIO.parse(StringIO(handle), 'fasta')}
 
         return g
 
-    def _subseq(self, contig, start_stop):
-
-        start, stop = start_stop
-        return self.genome[contig][start:stop]
-
     def _blast(self, seq):
+        """Performs a megablast search of `seq` in a blast database
+        (presumably `nt`) if one is provided.
+
+        Returns a list of the sequences names for the `self.top` best hits.
+        """
 
         if self.nt_path:
 
@@ -62,6 +66,9 @@ class Reporter(object):
         return out
 
     def _parse_foreign_phylo(self, contig, start, stop):
+        """For an index pair in self.foreign_indices,
+        return a dictionary of the proportions of foreign-origin reads.
+        """
 
         classifications = defaultdict(Decimal)
 
@@ -83,17 +90,20 @@ class Reporter(object):
         return {key: float(classifications[key]) for key in classifications}
 
     def _ddivide(self, a, b):
-
+        """Performs Decimal() division and returns a JSON-friendly float()."""
         return float(Decimal(str(a)) / Decimal(str(b)))
 
     def _gc_content(self, sequence):
-
+        """Calculates the GC content of the given sequence"""
         gcs = sum(1 for x in sequence.upper() if x in "GC")
         l = len(sequence)
 
         return self._ddivide(gcs, l)
 
     def _create_json(self):
+        """Formats the JSON containing results for every region
+        identified in self.foreign_indices.
+        """
 
         def result_json(contig, index_pair):
 
@@ -113,7 +123,7 @@ class Reporter(object):
                    'gc': {'query': self._gc_content(seq),
                           'contig': self._gc_content(self.genome[contig])},
 
-                   'blast_hits': list(enumerate(self._blast(seq), 1)),
+                   'blast_hits': self._blast(seq),
 
                    'read_classification': phylo,
 
@@ -131,6 +141,9 @@ class Reporter(object):
         return json.dumps(r, separators = (', ', ': '))
 
     def report(self):
+        """Orders the creation of JSON-formatted results,
+        and sends them to stdout.
+        """
 
         output = self._create_json()
-        print(output)  # report is sent to stdout
+        print(output)
