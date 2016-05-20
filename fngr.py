@@ -150,7 +150,7 @@ def classify(queries, cores, db):
         chunk = length // frac
 
         for i in range(0, length, chunk):
-            yield '\n'.join(split_kraken_out[i:i + chunk)])
+            yield '\n'.join(split_kraken_out[i:i + chunk])
 
     frac = round(sqrt(cores))
     kraken = ('kraken',
@@ -165,7 +165,7 @@ def classify(queries, cores, db):
     with concurrent.futures.ProcessPoolExecutor(frac) as executor:
 
         translated = executor.map(partial(translate, db=db),
-                                  chunk_kraken_out(kraken_out frac))
+                                  chunk_kraken_out(kraken_out, frac))
 
     return '\n'.join(translated)
 
@@ -277,7 +277,7 @@ def main():
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
     report = reporter.Reporter(handle, foreign_indices, phylogeny,
-                               args.fragment, args.nt_database)
+                               args.fragment, args.nt_database, args.cores)
 
     report.report()
 if __name__ == '__main__':

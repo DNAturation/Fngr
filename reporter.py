@@ -11,7 +11,7 @@ import subprocess
 class Reporter(object):
 
     def __init__(self, handle, foreign_indices, phylogeny, fragment_size,
-                 nt_path, top = 1):
+                 nt_path, cores, top = 1):
 
         self.genome = self._load_genome(handle)
         self.foreign_indices = foreign_indices
@@ -19,6 +19,7 @@ class Reporter(object):
         self.top = top
         self.phylogeny = phylogeny
         self.fragment_size = fragment_size
+        self.cores = cores
 
     def _load_genome(self, handle):
 
@@ -36,7 +37,10 @@ class Reporter(object):
 
         if self.nt_path:
 
-            blastn = ('blastn', '-db', self.nt_path, '-outfmt', '5')
+            blastn = ('blastn',
+                      '-db', self.nt_path,
+                      '-outfmt', '5',
+                      '-num_threads', str(self.cores))
             hits = []
 
             blastn_out = subprocess.check_output(blastn, input = seq,
@@ -45,7 +49,7 @@ class Reporter(object):
             result = NCBIXML.read(StringIO(blastn_out))
 
             for aln in result.alignments:
-                if len(hits) < top:
+                if len(hits) < self.top:
                     hits.append(aln.title)
                 else:
                     break
