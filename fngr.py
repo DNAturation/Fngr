@@ -40,6 +40,9 @@ def arguments():
                         help = 'Override the default genome name \
                                 [infer from filename or \'stdin\']')
 
+    parser.add_argument('--top', default=1, type=int,
+                        help='Number of top BLAST hits to return')
+
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use [all]')
 
@@ -283,7 +286,8 @@ def main():
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
     report = reporter.Reporter(handle, foreign_indices, phylogeny,
-                               args.fragment, args.nt_database, args.cores)
+                               args.fragment, args.nt_database,
+                               args.cores, args.top)
 
     report.report()
 if __name__ == '__main__':
