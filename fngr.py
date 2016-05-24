@@ -216,7 +216,7 @@ def determine_origin(calls, counts, root):
     origins = {}
 
     for contig in calls:
-        classified = [-1 for i in range(counts[contig])]  # init unclassified
+        classified = [0 for i in range(counts[contig])]  # init unclassified
 
         for s in calls[contig]:
 
