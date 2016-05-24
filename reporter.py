@@ -7,6 +7,7 @@ from decimal import Decimal
 from io import StringIO
 import json
 import subprocess
+import sys
 
 class Reporter(object):
 
@@ -138,7 +139,7 @@ class Reporter(object):
 
                 r[contig].append(result_json(contig, index_pair))
 
-        return json.dumps(r, separators = (', ', ': '))
+        return r
 
     def report(self):
         """Orders the creation of JSON-formatted results,
@@ -146,4 +147,4 @@ class Reporter(object):
         """
 
         output = self._create_json()
-        print(output)
+        json.dump(output, sys.stdout, indent=4, separators=(', ', ': '))
