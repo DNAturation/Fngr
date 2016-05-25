@@ -22,6 +22,9 @@ def arguments():
                         help = 'Least precise taxonomic description matching \
                                 the target organism')
 
+    parser.add_argument('--mobile', action='store_true',
+                        help='Treat mobile genetic elements as foreign')
+
     parser.add_argument('--kraken-database', required = True,
                         help = 'Path to Kraken database')
 
@@ -197,7 +200,7 @@ def parse_phylogeny(translated):
 
     return calls
 
-def determine_origin(calls, counts, root):
+def determine_origin(calls, counts, root, mobile):
     """Determines whether each pseudoread originated in the host genome
     or is novel to this species.
 
@@ -223,8 +226,13 @@ def determine_origin(calls, counts, root):
             start = int(s)
 
             # 0 is possibly foreign, 1 matches root taxonomy
-            # unclassified reads are not in calls, so are left -1
+            # unclassified reads are not in calls, so are left as 0
             classified[start] = int(root in calls[contig][s])
+
+            if mobile:
+                if any(mob in ''.join(calls[contig][s]) for mob in
+                       ('phage', 'transposon', 'plasmid', 'mobile')):
+                    classified[start] = 0
 
         origins[contig] = classified
 
@@ -281,7 +289,8 @@ def main():
 
     phylogeny = parse_phylogeny(classifications)
 
-    origins = determine_origin(phylogeny, pseudoread_counts, args.organism)
+    origins = determine_origin(phylogeny, pseudoread_counts,
+                               args.organism, args.mobile)
 
     foreign_indices = identify_foreign(origins, args.threshold, args.fragment)
 
