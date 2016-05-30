@@ -55,7 +55,11 @@ class Reporter(object):
 
             for aln in result.alignments:
                 if len(hits) < self.top:
-                    hits.append(aln.title)
+                    hits.append({'align_title': aln.title,
+                                 'identities': aln.hsps[0].identities,
+                                 'length': aln.hsps[0].aln_length,
+                                 'evalue': aln.hsps[0].expect
+                                 })
                 else:
                     break
 
@@ -147,4 +151,5 @@ class Reporter(object):
         """
 
         output = self._create_json()
-        json.dump(output, sys.stdout, indent=4, separators=(', ', ': '))
+        json.dump(output, sys.stdout,
+                  indent=4, separators=(', ', ': '), sort_keys=True)
