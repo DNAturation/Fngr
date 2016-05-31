@@ -57,7 +57,7 @@ class Reporter(object):
                 if len(hits) < self.top:
                     hits.append({'align_title': aln.title,
                                  'identities': aln.hsps[0].identities,
-                                 'length': aln.hsps[0].aln_length,
+                                 'length': aln.hsps[0].align_length,
                                  'evalue': aln.hsps[0].expect
                                  })
                 else:
