@@ -12,7 +12,7 @@ import sys
 class Reporter(object):
 
     def __init__(self, handle, foreign_indices, phylogeny, fragment_size,
-                 nt_path, cores, top = 1):
+                 nt_path, cores, top, fast):
 
         self.genome = self._load_genome(handle)
         self.foreign_indices = foreign_indices
@@ -21,6 +21,7 @@ class Reporter(object):
         self.phylogeny = phylogeny
         self.fragment_size = fragment_size
         self.cores = cores
+        self.fast = fast
 
     def _load_genome(self, handle):
         """Returns a dictionary representation of the fasta file.
@@ -118,6 +119,8 @@ class Reporter(object):
             length_ratio = self._ddivide(len(seq), len(self.genome[contig]))
             phylo = self._parse_foreign_phylo(contig, start, stop)
 
+            will_blast = (not self.fast) or length_ratio < 1.0
+
             out = {'index': {'start': start,
                              'stop': stop},
 
@@ -128,7 +131,7 @@ class Reporter(object):
                    'gc': {'query': self._gc_content(seq),
                           'contig': self._gc_content(self.genome[contig])},
 
-                   'blast_hits': self._blast(seq),
+                   'blast_hits': self._blast(seq) if will_blast else None,
 
                    'read_classification': phylo,
 

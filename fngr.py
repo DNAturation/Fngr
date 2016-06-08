@@ -40,11 +40,16 @@ def arguments():
                         help = 'Override the default genome name \
                                 [infer from filename or \'stdin\']')
 
-    parser.add_argument('--top', default=1, type=int,
-                        help='Number of top BLAST hits to return')
+    parser.add_argument('--top', default=10, type=int,
+                        help='Number of top BLAST hits to return [10]')
 
     parser.add_argument('--cores', type = int, default = cpu_count(),
                         help = 'Number of CPU cores to use [all]')
+
+    parser.add_argument('--fast', action='store_true',
+                        help='Run in fast mode; does not run BLAST confirm \
+                             cases where 100% of a contig does not belong \
+                             to --organism [off]')
 
     parser.add_argument('assembly', help = 'FASTA formatted file \
                                             or \'-\' to read from stdin')
