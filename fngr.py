@@ -47,8 +47,8 @@ def arguments():
                         help = 'Number of CPU cores to use [all]')
 
     parser.add_argument('--fast', action='store_true',
-                        help='Run in fast mode; does not run BLAST confirm \
-                             cases where 100% of a contig does not belong \
+                        help='Run in fast mode; does not BLAST confirm cases \
+                             where 100 percent of a contig does not belong \
                              to --organism [off]')
 
     parser.add_argument('assembly', help = 'FASTA formatted file \
@@ -292,7 +292,7 @@ def main():
 
     report = reporter.Reporter(handle, foreign_indices, phylogeny,
                                args.fragment, args.nt_database,
-                               args.cores, args.top)
+                               args.cores, args.top, args.fast)
 
     report.report()
 if __name__ == '__main__':
