@@ -25,6 +25,12 @@ def arguments():
     parser.add_argument('-o', '--output', default='', metavar='PATH',
                         help='Output folder [\'\']')
 
+    parser.add_argument('-i', '--in-place', action='store_true',
+                        help='Damn the torpedoes! Overwrite the input \
+                             genome with the decontaminated version, \
+                             and suppress output of the .contamination file. \
+                             The action cannot be reversed [off]')
+
     return parser.parse_args()
 
 def locate_contaminant_names(fngr, threshold):
@@ -51,12 +57,18 @@ def separate_contigs(genome, contaminants):
 
     return good, bad
 
-def write_output(contigs, name, ext, outpath):
+def create_outdir(outpath, name):
 
-    if not os.access(os.path.join(outpath, name), os.F_OK):
-        os.mkdir(os.path.join(outpath, name))
+    subdir = os.path.join(outpath, name)
 
-    with open(os.path.join(outpath, name, name + ext),'w') as o:
+    if not os.access(subdir, os.F_OK):
+        os.mkdir(subdir)
+
+    return subdir
+
+def write_output(contigs, name, outpath):
+
+    with open(os.path.join(outpath, name),'w') as o:
         seqs = (SeqRecord(contigs[rec], rec, description='') for rec in contigs)
         SeqIO.write(sorted(seqs, key=lambda x: x.id), o, 'fasta')
 
@@ -68,8 +80,12 @@ def main():
     contaminants = locate_contaminant_names(args.fngr, args.threshold)
     good, bad = separate_contigs(args.genome, contaminants)
 
-    write_output(good, name, '.fasta', args.output)
-    write_output(bad, name, '.contamination', args.output)
+    if args.in_place:
+        write_output(good, name + '.fasta', os.path.dirname(args.genome))
+    else:
+        outdir = create_outdir(args.output, name)
+        write_output(good, name + '.fasta', outdir)
+        write_output(bad, name + '.contamination', outdir)
 
 if __name__ == '__main__':
     main()
