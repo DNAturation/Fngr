@@ -51,13 +51,15 @@ def arguments():
                              where 100 percent of a contig does not belong \
                              to --organism [off]')
 
-    parser.add_argument('--cache', default='/tmp/fngr_cache.json',
-                        metavar='PATH', help='Path to results cache file \
-                                [/tmp/fngr_cache.json]')
+    caching = parser.add_mutually_exclusive_group()
 
-    parser.add_argument('--no-cache', action='store_true',
-                        help='Override --cache argument and prevent \
-                             caching of BLAST results [off]')
+    caching.add_argument('--cache', default='/tmp/fngr_cache.json',
+                         metavar='PATH', help='Path to results cache file \
+                                 [/tmp/fngr_cache.json]')
+
+    caching.add_argument('--no-cache', action='store_const',
+                         const=None, dest='cache',
+                         help='Prevent caching of BLAST results [off]')
 
     parser.add_argument('assembly', help = 'FASTA formatted file \
                                             or \'-\' to read from stdin')
@@ -300,7 +302,7 @@ def main():
 
     report = reporter.Reporter(handle, foreign_indices, phylogeny,
                                args.fragment, args.nt_database,
-                               args.cores, args.top, args.fast)
+                               args.cores, args.top, args.fast, args.cache)
 
     report.report()
 if __name__ == '__main__':

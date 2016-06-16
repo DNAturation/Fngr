@@ -13,7 +13,7 @@ import sys
 class Reporter(object):
 
     def __init__(self, handle, foreign_indices, phylogeny, fragment_size,
-                 nt_path, cores, top, fast):
+                 nt_path, cores, top, fast, cache_file):
 
         self.genome = self._load_genome(handle)
         self.foreign_indices = foreign_indices
@@ -36,7 +36,7 @@ class Reporter(object):
 
         return g
 
-    @cache(cache_file)
+    @cache
     def _blast(self, seq):
         """Performs a megablast search of `seq` in a blast database
         (presumably `nt`) if one is provided.

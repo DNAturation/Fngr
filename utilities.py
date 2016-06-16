@@ -4,11 +4,14 @@ import os
 
 pretty_json = partial(json.dump, indent=4, separators=(', ', ': '))
 
-def cache(func, cache_file):
+def cache(func):
     '''Caches the results of func in an external JSON file'''
 
     @wraps(func)
-    def wrapper(sequence):
+    def wrapper(*args):
+
+        # args[0] is 'self'
+        cache_file = args[0].cache_file
 
         # if caching has been turned off
         if not cache_file:
