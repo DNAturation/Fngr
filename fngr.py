@@ -51,6 +51,14 @@ def arguments():
                              where 100 percent of a contig does not belong \
                              to --organism [off]')
 
+    parser.add_argument('--cache', default='/tmp/fngr_cache.json',
+                        metavar='PATH', help='Path to results cache file \
+                                [/tmp/fngr_cache.json]')
+
+    parser.add_argument('--no-cache', action='store_true',
+                        help='Override --cache argument and prevent \
+                             caching of BLAST results [off]')
+
     parser.add_argument('assembly', help = 'FASTA formatted file \
                                             or \'-\' to read from stdin')
 
