@@ -157,4 +157,4 @@ class Reporter(object):
         """
 
         output = self._create_json()
-        pretty_json(output, sys.stdout,  sort_keys=True)
+        pretty_json(output, sys.stdout, sort_keys=True)
