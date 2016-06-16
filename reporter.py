@@ -5,6 +5,7 @@ from Bio.Blast import NCBIXML
 from collections import defaultdict
 from decimal import Decimal
 from io import StringIO
+from utilities import pretty_json, cache
 import json
 import subprocess
 import sys
@@ -22,6 +23,7 @@ class Reporter(object):
         self.fragment_size = fragment_size
         self.cores = cores
         self.fast = fast
+        self.cache_file = cache_file
 
     def _load_genome(self, handle):
         """Returns a dictionary representation of the fasta file.
@@ -34,6 +36,7 @@ class Reporter(object):
 
         return g
 
+    @cache(cache_file)
     def _blast(self, seq):
         """Performs a megablast search of `seq` in a blast database
         (presumably `nt`) if one is provided.
@@ -154,5 +157,4 @@ class Reporter(object):
         """
 
         output = self._create_json()
-        json.dump(output, sys.stdout,
-                  indent=4, separators=(', ', ': '), sort_keys=True)
+        pretty_json(output, sys.stdout,  sort_keys=True)
