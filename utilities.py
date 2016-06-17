@@ -11,37 +11,43 @@ def cache(func):
     def wrapper(*args):
 
         # args[0] is 'self'
-        cache_file = args[0].cache_file
+        cache_obj = args[0].cache_obj
+        sequence = args[1]
 
         # if caching has been turned off
-        if not cache_file:
-            out = func(sequence)
+        if cache_obj is None:
+            out = func(*args)
 
-        # if the cache hasn't been created yet
-        elif not os.access(cache_file, os.F_OK):
+        # the sequence is in the cache
+        elif sequence in cache_obj:
 
-            out = func(sequence)
-            data = {sequence: out}
+            out = cache_obj[sequence]
 
-            with open(cache_file, 'w') as f:
-                pretty_json(data, f)
-
-        # if the cache exists
+        # the sequence is not in the cache
         else:
 
-            with open(cache_file, 'r+') as f:
+            out = func(*args)
+            cache_obj[sequence] = out
 
-                data = json.load(f)
+        return out, cache_obj
+    return wrapper
 
-                if sequence in data:
+def load_cache(path):
 
-                    out = data[sequence]
+    if path is not None:
 
-                else:
+        if not os.access(path, os.F_OK):
+            cache_obj = {}
 
-                    out = func(sequence)
-                    data[sequence] = out
+        else:
 
-                    pretty_json(data, f)
+            with open(path) as f:
+                cache_obj = json.load(f)
 
-        return out
+        return cache_obj
+
+def write_cache(obj, path):
+
+    if path is not None:
+        with open(path, 'w') as f:
+            pretty_json(obj, f)

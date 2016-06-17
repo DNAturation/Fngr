@@ -5,8 +5,9 @@ from Bio.Blast import NCBIXML
 from collections import defaultdict
 from decimal import Decimal
 from io import StringIO
-from utilities import pretty_json, cache
+from utilities import pretty_json, cache, load_cache, write_cache
 import json
+import os
 import subprocess
 import sys
 
@@ -14,6 +15,15 @@ class Reporter(object):
 
     def __init__(self, handle, foreign_indices, phylogeny, fragment_size,
                  nt_path, cores, top, fast, cache_file):
+
+        def assign_cache_file_path(path):
+
+            if os.path.isdir(path):
+                cache_path = os.path.join(path, 'fngr_cache.json')
+            else:
+                cache_path = path
+
+            return cache_path
 
         self.genome = self._load_genome(handle)
         self.foreign_indices = foreign_indices
@@ -23,7 +33,8 @@ class Reporter(object):
         self.fragment_size = fragment_size
         self.cores = cores
         self.fast = fast
-        self.cache_file = cache_file
+        self.cache_file = assign_cache_file_path(cache_file)
+        self.cache_obj = load_cache(self.cache_file)
 
     def _load_genome(self, handle):
         """Returns a dictionary representation of the fasta file.
@@ -109,6 +120,19 @@ class Reporter(object):
 
         return self._ddivide(gcs, l)
 
+    def _run_blast(self, seq, will_blast):
+
+            if will_blast:
+
+                hits, self.cache_obj = self._blast(seq)
+
+                result = hits
+
+            else:
+                result = None
+
+            return result
+
     def _create_json(self):
         """Formats the JSON containing results for every region
         identified in self.foreign_indices.
@@ -124,6 +148,8 @@ class Reporter(object):
 
             will_blast = (not self.fast) or length_ratio < 1.0
 
+            blast_hits = self._run_blast(seq, will_blast)
+
             out = {'index': {'start': start,
                              'stop': stop},
 
@@ -134,7 +160,7 @@ class Reporter(object):
                    'gc': {'query': self._gc_content(seq),
                           'contig': self._gc_content(self.genome[contig])},
 
-                   'blast_hits': self._blast(seq) if will_blast else None,
+                   'blast_hits': blast_hits,
 
                    'read_classification': phylo,
 
@@ -157,4 +183,6 @@ class Reporter(object):
         """
 
         output = self._create_json()
-        pretty_json(output, sys.stdout,  sort_keys=True)
+        write_cache(self.cache_obj, self.cache_file)
+
+        pretty_json(output, sys.stdout, sort_keys=True)
