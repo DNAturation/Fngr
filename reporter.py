@@ -183,6 +183,7 @@ class Reporter(object):
         """
 
         output = self._create_json()
+
         write_cache(self.cache_obj, self.cache_file)
 
         pretty_json(output, sys.stdout, sort_keys=True)

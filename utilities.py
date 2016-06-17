@@ -1,6 +1,7 @@
 from functools import partial, wraps
 import json
 import os
+import sys
 
 pretty_json = partial(json.dump, indent=4, separators=(', ', ': '))
 
@@ -16,6 +17,7 @@ def cache(func):
 
         # if caching has been turned off
         if cache_obj is None:
+
             out = func(*args)
 
         # the sequence is in the cache
