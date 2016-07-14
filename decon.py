@@ -39,6 +39,13 @@ def arguments():
     return parser.parse_args()
 
 def locate_contaminant_names(fngr, threshold, rm_mob):
+    """Determines which contigs are contaminants on the basis
+    of the ratio of foreign sequence to contig length.
+
+    Mobile elements may optionally be treated as contamination.
+
+    Returns a list of contig names.
+    """
 
     def above_threshold(data, contig):
 
@@ -65,7 +72,7 @@ def locate_contaminant_names(fngr, threshold, rm_mob):
             return not any(m in hits for m in mobs)
 
         else:
-            True
+            return True
 
     def is_removable(data, contig, rm_mob):
 
@@ -80,6 +87,10 @@ def locate_contaminant_names(fngr, threshold, rm_mob):
     return [contig for contig in data if is_removable(data, contig, rm_mob)]
 
 def separate_contigs(genome, contaminants):
+    """Separates contigs into 'good' and 'bad' (probable contaminants).
+
+    Returns each as {name: sequence} dicts.
+    """
 
     good, bad = {}, {}
 
@@ -96,6 +107,10 @@ def separate_contigs(genome, contaminants):
     return good, bad
 
 def create_outdir(outpath, name):
+    """Creates and returns the path for the results directory.
+
+    This path is derived from --genome and --output.
+    """
 
     subdir = os.path.join(outpath, name)
 
@@ -105,8 +120,10 @@ def create_outdir(outpath, name):
     return subdir
 
 def write_output(contigs, name, outpath):
+    """Writes a fasta file with contigs sorted by contig name"""
 
     with open(os.path.join(outpath, name),'w') as o:
+
         seqs = (SeqRecord(contigs[s], s, description='') for s in contigs)
         SeqIO.write(sorted(seqs, key=lambda x: x.id), o, 'fasta')
 
