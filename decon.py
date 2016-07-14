@@ -31,15 +31,53 @@ def arguments():
                              and suppress output of the .contamination file. \
                              The action cannot be reversed [off]')
 
+    parser.add_argument('-m', '--remove-mobile', action='store_true',
+                        help='Remove contigs composed solely  of mobile \
+                              elements like plasmids or phages as though \
+                              they were contamination [off]')
+
     return parser.parse_args()
 
-def locate_contaminant_names(fngr, threshold):
+def locate_contaminant_names(fngr, threshold, rm_mob):
+
+    def above_threshold(data, contig):
+
+        value = float(data[contig][0]['length']['ratio'])
+
+        return value >= threshold
+
+    def handle_mobile(data, contig):
+
+        # these are deliberately truncated to increase sensitivity
+        mobs = ('plasmid', 'phage', 'transpos', 'extra-chromo',
+                'extra chromo', 'mobil')
+
+        if not rm_mob:
+
+            blast_results = data[contig][0]['blast_hits']
+
+            blast_names = [b['align_title'] for b in blast_results]
+
+            kraken = list(data[contig][0]['read_classification'].keys())
+
+            hits = [o.lower() for o in kraken + blast_names]
+
+            return not any(m in hits for m in mobs)
+
+        else:
+            True
+
+    def is_removable(data, contig, rm_mob):
+
+        thresh = above_threshold(data, contig)
+        mob = handle_mobile(data, contig, rm_mob)
+
+        return thresh and mob
 
     with open(fngr) as f:
         data = json.load(f)
 
-    return [contig for contig in data
-            if float(data[contig][0]['length']['ratio']) >= threshold]
+    return [contig for contig in data if is_removable(data, contig, rm_mob)]
 
 def separate_contigs(genome, contaminants):
 
@@ -69,7 +107,7 @@ def create_outdir(outpath, name):
 def write_output(contigs, name, outpath):
 
     with open(os.path.join(outpath, name),'w') as o:
-        seqs = (SeqRecord(contigs[rec], rec, description='') for rec in contigs)
+        seqs = (SeqRecord(contigs[s], s, description='') for s in contigs)
         SeqIO.write(sorted(seqs, key=lambda x: x.id), o, 'fasta')
 
 def main():
