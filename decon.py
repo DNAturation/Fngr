@@ -53,7 +53,7 @@ def locate_contaminant_names(fngr, threshold, rm_mob):
 
         return value >= threshold
 
-    def handle_mobile(data, contig):
+    def handle_mobile(data, contig, rm_mob):
 
         # these are deliberately truncated to increase sensitivity
         mobs = ('plasmid', 'phage', 'transpos', 'extra-chromo',
@@ -132,7 +132,7 @@ def main():
     args = arguments()
 
     name = os.path.splitext(os.path.basename(args.genome))[0]
-    contaminants = locate_contaminant_names(args.fngr, args.threshold)
+    contaminants = locate_contaminant_names(args.fngr, args.threshold, args.remove_mobile)
     good, bad = separate_contigs(args.genome, contaminants)
 
     if args.in_place:
